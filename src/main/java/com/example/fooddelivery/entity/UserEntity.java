@@ -1,5 +1,6 @@
 package com.example.fooddelivery.entity;
 
+import com.example.fooddelivery.dto.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,14 +11,13 @@ import lombok.Setter;
 @Setter
 public class UserEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY )
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     @Column(name = "login", unique = true, nullable = false)
     private String login;
     @Column(name = "password", nullable = false)
     private String password;
-    @Column(name = "email", unique = true, nullable = false)
-    private String email;
-
+    @Column(name = "role", nullable = false)
+    private UserRole role;
 }

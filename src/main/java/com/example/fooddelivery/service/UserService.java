@@ -1,26 +1,48 @@
 package com.example.fooddelivery.service;
 
-import com.example.fooddelivery.dto.UserDto;
-import com.example.fooddelivery.repository.UserRepository;
 import com.example.fooddelivery.entity.UserEntity;
-import com.example.fooddelivery.mapper.UserEntityMapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
+import com.example.fooddelivery.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.Errors;
-import org.springframework.web.bind.annotation.ModelAttribute;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @Service
-public class UserService {
+@Transactional
+public class UserService implements UserDetailsService {
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public List<UserEntity> findAll() {
         // JPA repos
         return userRepository.findAll();
     }
 
+    public UserEntity register(UserEntity userEntity) {
+        if (userRepository.findByLoginIgnoreCase(userEntity.getLogin()).isPresent()) {
+            throw new RuntimeException("User Already exists");
+        }
+        userRepository.save(userEntity);
+        return userEntity;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        UserEntity user = userRepository
+                .findByLoginIgnoreCase(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User with login = " + username + " not found"));
+        Set<SimpleGrantedAuthority> roles = Collections.singleton(user.getRole().toAuthority());
+        return new org.springframework.security.core.userdetails.User(user.getLogin(), user.getPassword(), roles);
+    }
 }
