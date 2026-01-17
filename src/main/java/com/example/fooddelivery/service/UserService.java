@@ -31,10 +31,28 @@ public class UserService implements UserDetailsService {
 
     public UserEntity register(UserEntity userEntity) {
         if (userRepository.findByLoginIgnoreCase(userEntity.getLogin()).isPresent()) {
-            throw new RuntimeException("User Already exists");
+            throw new RuntimeException("User already exists");
         }
         userRepository.save(userEntity);
         return userEntity;
+    }
+
+    public UserEntity getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User with id = " + id + " not found"));
+    }
+
+    public UserEntity changeUserProfile(Long id, UserEntity userEntity) {
+        UserEntity currentUserEntity = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("User with id = " + id + " not found"));
+        if (userRepository.findByLoginIgnoreCase(userEntity.getLogin()).isPresent()) {
+            throw new RuntimeException("Username already taken");
+        }
+        currentUserEntity.setLogin(userEntity.getLogin());
+        currentUserEntity.setPassword(userEntity.getPassword());
+        currentUserEntity.setRole(userEntity.getRole());
+        userRepository.save(currentUserEntity);
+        return currentUserEntity;
     }
 
     @Override

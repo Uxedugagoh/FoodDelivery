@@ -31,11 +31,22 @@ public class UserController {
         // доступ к entity
         return userService.findAll().stream().map(userEntityMapper::toDto).toList();
     }
+    @GetMapping("/{id}")
+    public UserDto getUserProfile(@PathVariable Long id) {
+        return userEntityMapper.toDto(userService.getUserById(id));
+    }
 
     @PostMapping
     public UserDto registerUser(@RequestBody UserDto userDto) {
         UserEntity userEntity = userEntityMapper.toEntity(userDto);
         userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
         return userEntityMapper.toDto(userService.register(userEntity));
+    }
+
+    @PutMapping("/{id}")
+    public UserDto changeUserProfile(@PathVariable Long id, @RequestBody UserDto userDto) {
+        UserEntity userEntity = userEntityMapper.toEntity(userDto);
+        userEntity.setLogin(passwordEncoder.encode(userEntity.getPassword()));
+        return userEntityMapper.toDto(userService.changeUserProfile(id, userEntity));
     }
 }
