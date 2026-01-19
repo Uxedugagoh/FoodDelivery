@@ -1,5 +1,6 @@
 package com.example.fooddelivery.service;
 
+import com.example.fooddelivery.dto.UserRole;
 import com.example.fooddelivery.entity.UserEntity;
 import com.example.fooddelivery.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -27,6 +28,10 @@ public class UserService implements UserDetailsService {
     public List<UserEntity> findAll() {
         // JPA repos
         return userRepository.findAll();
+    }
+
+    public List<UserEntity> findAllByRole(UserRole role) {
+        return userRepository.findAllByRole(role);
     }
 
     public UserEntity register(UserEntity userEntity) {
@@ -62,5 +67,11 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User with login = " + username + " not found"));
         Set<SimpleGrantedAuthority> roles = Collections.singleton(user.getRole().toAuthority());
         return new org.springframework.security.core.userdetails.User(user.getLogin(), user.getPassword(), roles);
+    }
+
+    public UserEntity deleteUserById(Long id) {
+        UserEntity user = getUserById(id);
+        userRepository.delete(user);
+        return user;
     }
 }
