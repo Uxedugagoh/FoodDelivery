@@ -5,6 +5,7 @@ import com.example.fooddelivery.dto.UserRole;
 import com.example.fooddelivery.entity.UserEntity;
 import com.example.fooddelivery.mapper.UserEntityMapper;
 import com.example.fooddelivery.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,19 +14,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
     private final UserEntityMapper userEntityMapper;
     private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    public UserController(UserService userService, UserEntityMapper userEntityMapper, PasswordEncoder passwordEncoder) {
-        this.userService = userService;
-        this.userEntityMapper = userEntityMapper;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @GetMapping
     public List<UserDto> findAllUsersByRole(@RequestParam(required = false) String role) {
