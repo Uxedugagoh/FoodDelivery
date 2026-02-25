@@ -2,13 +2,10 @@ package com.example.fooddelivery.controller;
 
 import com.example.fooddelivery.dto.UserDto;
 import com.example.fooddelivery.dto.UserRole;
-import com.example.fooddelivery.entity.UserEntity;
 import com.example.fooddelivery.mapper.UserEntityMapper;
 import com.example.fooddelivery.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,7 +17,6 @@ public class UserController {
 
     private final UserService userService;
     private final UserEntityMapper userEntityMapper;
-    private final PasswordEncoder passwordEncoder;
 
     @GetMapping
     public List<UserDto> findAllUsersByRole(@RequestParam(required = false) String role) {
@@ -41,16 +37,12 @@ public class UserController {
     @PostMapping
     public UserDto registerUser(@RequestBody UserDto userDto) {
         userDto.setId(null);
-        UserEntity userEntity = userEntityMapper.toEntity(userDto);
-        userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
-        return userEntityMapper.toDto(userService.register(userEntity));
+        return userEntityMapper.toDto(userService.register(userDto));
     }
 
-    @PutMapping("/{id}")
-    public UserDto changeUserProfile(@PathVariable Long id, @RequestBody UserDto userDto) {
-        UserEntity userEntity = userEntityMapper.toEntity(userDto);
-        userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
-        return userEntityMapper.toDto(userService.changeUserProfile(id, userEntity));
+    @PutMapping
+    public UserDto changeUserProfile(@RequestBody UserDto userDto) {
+        return userEntityMapper.toDto(userService.changeUserProfile(userDto));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")

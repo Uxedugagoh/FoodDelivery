@@ -1,14 +1,21 @@
 package com.example.fooddelivery.service;
 
+import com.example.fooddelivery.dto.UserDto;
 import com.example.fooddelivery.dto.UserRole;
 import com.example.fooddelivery.entity.UserEntity;
+import com.example.fooddelivery.mapper.UserEntityMapper;
 import com.example.fooddelivery.repository.UserRepository;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -19,10 +26,14 @@ import java.util.Set;
 @Transactional
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserEntityMapper userEntityMapper;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserEntityMapper userEntityMapper) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.userEntityMapper = userEntityMapper;
     }
 
     public List<UserEntity> findAll() {
@@ -34,28 +45,31 @@ public class UserService implements UserDetailsService {
         return userRepository.findAllByRole(role);
     }
 
-    public UserEntity register(UserEntity userEntity) {
-        if (userRepository.findByLoginIgnoreCase(userEntity.getLogin()).isPresent()) {
-            throw new RuntimeException("User already exists");
+    public UserEntity register(UserDto userDto) {
+        if (userRepository.findByLoginIgnoreCase(userDto.getLogin()).isPresent()) {
+            throw new EntityExistsException("User already exists");
         }
-        userRepository.save(userEntity);
-        return userEntity;
+        userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        return userRepository.save(userEntityMapper.toEntity(userDto));
     }
 
     public UserEntity getUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User with id = " + id + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User with id = " + id + " not found"));
     }
 
-    public UserEntity changeUserProfile(Long id, UserEntity userEntity) {
-        UserEntity currentUserEntity = userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("User with id = " + id + " not found"));
-        if (userRepository.findByLoginIgnoreCase(userEntity.getLogin()).isPresent()) {
-            throw new RuntimeException("Username already taken");
+    public UserEntity changeUserProfile(UserDto userDto) {
+        User details = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        UserEntity currentUserEntity = userRepository.findByLoginIgnoreCase(details.getUsername())
+                .orElseThrow();
+
+        if (userDto.getLogin() != null && userRepository.findByLoginIgnoreCase(userDto.getLogin()).isPresent()) {
+            throw new EntityExistsException("Username already taken");
         }
-        currentUserEntity.setLogin(userEntity.getLogin());
-        currentUserEntity.setPassword(userEntity.getPassword());
-        currentUserEntity.setRole(userEntity.getRole());
+        userEntityMapper.updateUserEntity(currentUserEntity, userDto);
+        if (userDto.getPassword() != null) {
+            currentUserEntity.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        }
         userRepository.save(currentUserEntity);
         return currentUserEntity;
     }
@@ -64,9 +78,9 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity user = userRepository
                 .findByLoginIgnoreCase(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User with login = " + username + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("User with login = " + username + " not found"));
         Set<SimpleGrantedAuthority> roles = Collections.singleton(user.getRole().toAuthority());
-        return new org.springframework.security.core.userdetails.User(user.getLogin(), user.getPassword(), roles);
+        return new User(user.getLogin(), user.getPassword(), roles);
     }
 
     public UserEntity deleteUserById(Long id) {

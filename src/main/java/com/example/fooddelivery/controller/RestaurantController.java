@@ -5,7 +5,6 @@ import com.example.fooddelivery.entity.RestaurantEntity;
 import com.example.fooddelivery.mapper.RestaurantMapper;
 import com.example.fooddelivery.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,10 +21,22 @@ public class RestaurantController {
         return restaurantService.findAll().stream().map(restaurantMapper::toDto).toList();
     }
 
+    @GetMapping("/{id}")
+    public RestaurantDto findById(@PathVariable Long id) {
+        return restaurantMapper.toDto(restaurantService.findById(id));
+    }
+
+    @PutMapping
+    public RestaurantDto changeRestaurantProfile(@RequestBody RestaurantDto restaurantDto) {
+        return null;
+    }
+
     @PostMapping
     public RestaurantDto registerRestaurant(@RequestBody RestaurantDto restaurantDto) {
         restaurantDto.setId(null);
         RestaurantEntity restaurantEntity = restaurantMapper.toEntity(restaurantDto);
         return restaurantMapper.toDto(restaurantService.registerRestaurant(restaurantEntity));
     }
+
+
 }
