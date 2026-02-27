@@ -1,10 +1,12 @@
 package com.example.fooddelivery.service;
 
 import com.example.fooddelivery.dto.Cuisine;
+import com.example.fooddelivery.dto.MenuDto;
 import com.example.fooddelivery.dto.RestaurantDto;
 import com.example.fooddelivery.dto.RestaurantStatus;
 import com.example.fooddelivery.entity.RestaurantEntity;
 import com.example.fooddelivery.entity.UserEntity;
+import com.example.fooddelivery.mapper.MenuMapper;
 import com.example.fooddelivery.mapper.RestaurantMapper;
 import com.example.fooddelivery.repository.RestaurantRepository;
 import jakarta.persistence.EntityExistsException;
@@ -20,7 +22,9 @@ import java.util.List;
 public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final RestaurantMapper restaurantMapper;
+    private final MenuMapper menuMapper;
     private final UserService userService;
+    private final MenuService menuService;
 
     public List<RestaurantEntity> findByAnyCuisineIn(List<Cuisine> cuisines) {
         return restaurantRepository.findByAnyCuisineIn(cuisines);
@@ -35,7 +39,6 @@ public class RestaurantService {
                 .orElseThrow(() -> new EntityNotFoundException("Restaurant with id = " + id + " not found"));
     }
 
-    @Transactional
     public RestaurantEntity changeRestaurantProfile(RestaurantDto restaurantDto, Long restaurantId) {
         RestaurantEntity currentRestaurant = getUsersRestaurantById(restaurantId);
         // Проверка на занятость названия ресторана
@@ -48,7 +51,6 @@ public class RestaurantService {
         return currentRestaurant;
     }
 
-    @Transactional
     public RestaurantEntity registerRestaurant(RestaurantDto restaurantDto) {
         if (restaurantRepository.findByNameIgnoreCase(restaurantDto.getName()).isPresent()) {
             throw new EntityExistsException("Restaurant name already exists.");
@@ -56,24 +58,31 @@ public class RestaurantService {
         UserEntity currentUser = userService.getCurrentUser();
         RestaurantEntity restaurantEntity = restaurantMapper.toEntity(restaurantDto);
         restaurantEntity.setOwnerUser(currentUser);
-        restaurantRepository.save(restaurantEntity);
-        return restaurantEntity;
+        return restaurantRepository.save(restaurantEntity);
     }
 
-    @Transactional
     public RestaurantEntity closeRestaurant(Long id) {
         RestaurantEntity currentRestaurant = getUsersRestaurantById(id);
         currentRestaurant.setRestaurantStatus(RestaurantStatus.CLOSED);
-        restaurantRepository.save(currentRestaurant);
-        return currentRestaurant;
+        return restaurantRepository.save(currentRestaurant);
     }
 
     public RestaurantEntity getUsersRestaurantById(Long id) {
         UserEntity currentUser = userService.getCurrentUser();
         return restaurantRepository
                 .findByIdAndOwnerUser(id, currentUser)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("RestaurantNotFound")
-                );
+                .orElseThrow(() -> new EntityNotFoundException("RestaurantNotFound"));
     }
+
+    public MenuDto addDishToRestaurant(Long id, MenuDto menuDto) {
+        RestaurantEntity currentRestaurant = getUsersRestaurantById(id);
+        return menuMapper.toDto(menuService.addDishToRestaurant(currentRestaurant, menuDto));
+    }
+
+    @Transactional
+    public List<MenuDto> getMenu(Long id) {
+        RestaurantEntity currentRestaurant = getUsersRestaurantById(id);
+        return currentRestaurant.getMenuList().stream().map(menuMapper::toDto).toList();
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.example.fooddelivery.controller;
 
 import com.example.fooddelivery.dto.Cuisine;
+import com.example.fooddelivery.dto.MenuDto;
 import com.example.fooddelivery.dto.RestaurantDto;
 import com.example.fooddelivery.mapper.RestaurantMapper;
 import com.example.fooddelivery.service.RestaurantService;
@@ -46,5 +47,16 @@ public class RestaurantController {
     @DeleteMapping("/{id}")
     public RestaurantDto closeRestaurant(@PathVariable Long id) {
         return restaurantMapper.toDto(restaurantService.closeRestaurant(id));
+    }
+
+    @PreAuthorize("hasAnyRole('RESTAURANT_OWNER', 'ADMIN')")
+    @PostMapping("/{id}/menu")
+    public MenuDto addDishToRestaurant(@PathVariable Long id, @RequestBody MenuDto menuDto) {
+        return restaurantService.addDishToRestaurant(id, menuDto);
+    }
+
+    @GetMapping("/{id}/menu")
+    public List<MenuDto> getMenu(@PathVariable Long id) {
+        return restaurantService.getMenu(id);
     }
 }

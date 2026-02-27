@@ -1,5 +1,6 @@
 package com.example.fooddelivery.entity;
 
+import com.example.fooddelivery.dto.MenuStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,4 +21,7 @@ public class MenuEntity {
     @ManyToOne
     private RestaurantEntity restaurant;
 
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private MenuStatus status;
 }

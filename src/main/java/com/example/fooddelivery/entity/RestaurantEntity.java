@@ -29,7 +29,7 @@ public class RestaurantEntity {
     private UserEntity ownerUser;
 
     @OneToMany(mappedBy = "restaurant")
-    private List<MenuEntity> menuEntityList;
+    private List<MenuEntity> menuList;
 
     @Column(nullable = false)
     @ElementCollection()
