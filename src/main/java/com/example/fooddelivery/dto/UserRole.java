@@ -4,8 +4,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 public enum UserRole {
     USER,
-    RESTAURANT_OWNER,
-    ADMIN;
+    ADMIN,
+    RESTAURANT_OWNER;
+
 
     public SimpleGrantedAuthority toAuthority() {
         return new SimpleGrantedAuthority("ROLE_" + this.name());

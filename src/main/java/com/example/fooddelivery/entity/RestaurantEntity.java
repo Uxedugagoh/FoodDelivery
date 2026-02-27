@@ -1,7 +1,7 @@
 package com.example.fooddelivery.entity;
 
 import com.example.fooddelivery.dto.Cuisine;
-import com.fasterxml.jackson.databind.annotation.EnumNaming;
+import com.example.fooddelivery.dto.RestaurantStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,8 +24,19 @@ public class RestaurantEntity {
     @Column(name = "rating", nullable = false)
     private Double rating;
 
+    @ManyToOne
+    @JoinColumn(name = "owner_user_id")
+    private UserEntity ownerUser;
+
+    @OneToMany(mappedBy = "restaurant")
+    private List<MenuEntity> menuEntityList;
+
     @Column(nullable = false)
     @ElementCollection()
     @Enumerated(EnumType.STRING)
     private List<Cuisine> cuisines;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private RestaurantStatus restaurantStatus = RestaurantStatus.OPEN;
 }

@@ -20,8 +20,6 @@ public class UserController {
 
     @GetMapping
     public List<UserDto> findAllUsersByRole(@RequestParam(required = false) String role) {
-        // Используем логику преобразования маппера здесь, а не в сервисе, потому что может потребоваться прямой
-        // доступ к entity
         if (role == null || role.isBlank()) {
             return userService.findAll().stream().map(userEntityMapper::toDto).toList();
         }
@@ -32,6 +30,11 @@ public class UserController {
     @GetMapping("/{id}")
     public UserDto getUserProfile(@PathVariable Long id) {
         return userEntityMapper.toDto(userService.getUserById(id));
+    }
+
+    @GetMapping("/me")
+    public UserDto getUserProfile() {
+        return userEntityMapper.toDto(userService.getCurrentUser());
     }
 
     @PostMapping
@@ -45,7 +48,7 @@ public class UserController {
         return userEntityMapper.toDto(userService.changeUserProfile(userDto));
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public UserDto deleteUserProfile(@PathVariable Long id) {
         return userEntityMapper.toDto(userService.deleteUserById(id));

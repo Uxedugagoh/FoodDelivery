@@ -8,7 +8,7 @@ import com.example.fooddelivery.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -24,20 +24,13 @@ import java.util.Set;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserEntityMapper userEntityMapper;
 
-    @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserEntityMapper userEntityMapper) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.userEntityMapper = userEntityMapper;
-    }
-
     public List<UserEntity> findAll() {
-        // JPA repos
         return userRepository.findAll();
     }
 
@@ -47,7 +40,7 @@ public class UserService implements UserDetailsService {
 
     public UserEntity register(UserDto userDto) {
         if (userRepository.findByLoginIgnoreCase(userDto.getLogin()).isPresent()) {
-            throw new EntityExistsException("User already exists");
+            throw new EntityExistsException("Login already taken");
         }
         userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
         return userRepository.save(userEntityMapper.toEntity(userDto));
@@ -59,9 +52,7 @@ public class UserService implements UserDetailsService {
     }
 
     public UserEntity changeUserProfile(UserDto userDto) {
-        User details = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        UserEntity currentUserEntity = userRepository.findByLoginIgnoreCase(details.getUsername())
-                .orElseThrow();
+        UserEntity currentUserEntity = getCurrentUser();
 
         if (userDto.getLogin() != null && userRepository.findByLoginIgnoreCase(userDto.getLogin()).isPresent()) {
             throw new EntityExistsException("Username already taken");
@@ -87,5 +78,11 @@ public class UserService implements UserDetailsService {
         UserEntity user = getUserById(id);
         userRepository.delete(user);
         return user;
+    }
+
+    public UserEntity getCurrentUser() {
+        User details = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return userRepository.findByLoginIgnoreCase(details.getUsername())
+                .orElseThrow();
     }
 }
